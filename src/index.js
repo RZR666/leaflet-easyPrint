@@ -7,7 +7,7 @@ L.Control.EasyPrint = L.Control.extend({
     position: 'topleft',
     sizeModes: ['Current'],
     filename: 'map',
-    outputMode: 'event',
+    outputMode: 'print',
     hidden: false,
     tileWait: 500,
     hideControlContainer: true,
@@ -81,10 +81,10 @@ L.Control.EasyPrint = L.Control.extend({
     if (filename) {
       this.options.filename = filename
     }
-    //if (this.options.outputMode === 'print') {
-    //  this._page = window.open("", "_blank", 'toolbar=no,status=no,menubar=no,scrollbars=no,resizable=no,left=10, top=10, width=200, height=250, visible=none');
-    //  this._page.document.write(this._createSpinner(this.options.customWindowTitle, this.options.customSpinnerClass, this.options.spinnerBgCOlor));
-    //}
+    if (this.options.outputMode === 'print') {
+      this._page = window.open("", "_blank", 'toolbar=no,status=no,menubar=no,scrollbars=no,resizable=no,left=10, top=10, width=200, height=250, visible=none');
+      this._page.document.write(this._createSpinner(this.options.customWindowTitle, this.options.customSpinnerClass, this.options.spinnerBgCOlor));
+    }
     this.originalState = {
       mapWidth: this.mapContainer.style.width,
       widthWasAuto: false,
@@ -191,7 +191,11 @@ L.Control.EasyPrint = L.Control.extend({
       })
       .then(function (dataUrl) {
           var blob = plugin._dataURItoBlob(dataUrl);
-
+          if (plugin.options.outputMode === 'download') {
+            fileSaver.saveAs(blob, plugin.options.filename + '.png');
+          } else if (plugin.options.outputMode === 'print') {
+            plugin._sendToBrowserPrint(dataUrl, plugin.orientation);
+          }
           plugin._toggleControls(true);
           plugin._toggleClasses(plugin.options.hideClasses, true);
 
@@ -219,6 +223,14 @@ L.Control.EasyPrint = L.Control.extend({
       .catch(function (error) {
           console.error('Print operation failed', error);
       }); 
+  },
+
+  _sendToBrowserPrint: function (img, orientation) {
+    this._page.resizeTo(600, 800); 
+    var pageContent = this._createNewWindow(img, orientation, this)
+    this._page.document.body.innerHTML = ''
+    this._page.document.write(pageContent);
+    this._page.document.close();  
   },
 
   _createSpinner: function (title, spinnerClass, spinnerColor) {
@@ -295,6 +307,19 @@ L.Control.EasyPrint = L.Control.extend({
       }
       </style>
     <div class="`+spinnerClass+`">Loading...</div></body></html>`;
+  },
+
+  _createNewWindow: function (img, orientation, plugin) {
+    return `<html><head>
+        <style>@media print {
+          img { max-width: 98%!important; max-height: 98%!important; }
+          @page { size: ` + orientation + `;}}
+        </style>
+        <script>function step1(){
+        setTimeout('step2()', 10);}
+        function step2(){window.print();window.close()}
+        </script></head><body onload='step1()'>
+        <img src="` + img + `" style="display:block; margin:auto;"></body></html>`;
   },
 
   _createOuterContainer: function (mapDiv) {
@@ -423,4 +448,3 @@ L.Control.EasyPrint = L.Control.extend({
 L.easyPrint = function(options) {
   return new L.Control.EasyPrint(options);
 };
-
