@@ -191,11 +191,7 @@ L.Control.EasyPrint = L.Control.extend({
       })
       .then(function (dataUrl) {
           var blob = plugin._dataURItoBlob(dataUrl);
-          //if (plugin.options.outputMode === 'download') {
-          //  fileSaver.saveAs(blob, plugin.options.filename + '.png');
-          //} else if (plugin.options.outputMode === 'print') {
-          //  plugin._sendToBrowserPrint(dataUrl, plugin.orientation);
-          //}
+
           plugin._toggleControls(true);
           plugin._toggleClasses(plugin.options.hideClasses, true);
 
@@ -223,14 +219,6 @@ L.Control.EasyPrint = L.Control.extend({
       .catch(function (error) {
           console.error('Print operation failed', error);
       }); 
-  },
-
-  _sendToBrowserPrint: function (img, orientation) {
-    this._page.resizeTo(600, 800); 
-    var pageContent = this._createNewWindow(img, orientation, this)
-    this._page.document.body.innerHTML = ''
-    this._page.document.write(pageContent);
-    this._page.document.close();  
   },
 
   _createSpinner: function (title, spinnerClass, spinnerColor) {
@@ -307,19 +295,6 @@ L.Control.EasyPrint = L.Control.extend({
       }
       </style>
     <div class="`+spinnerClass+`">Loading...</div></body></html>`;
-  },
-
-  _createNewWindow: function (img, orientation, plugin) {
-    return `<html><head>
-        <style>@media print {
-          img { max-width: 98%!important; max-height: 98%!important; }
-          @page { size: ` + orientation + `;}}
-        </style>
-        <script>function step1(){
-        setTimeout('step2()', 10);}
-        function step2(){window.print();window.close()}
-        </script></head><body onload='step1()'>
-        <img src="` + img + `" style="display:block; margin:auto;"></body></html>`;
   },
 
   _createOuterContainer: function (mapDiv) {
